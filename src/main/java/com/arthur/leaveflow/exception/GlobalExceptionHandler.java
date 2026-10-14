@@ -30,4 +30,10 @@ public class GlobalExceptionHandler {
     public String tratarErroEmailExistente(EmailAlreadyExistsException e) {
         return e.getMessage();
     }
+
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String tratarEmployeeNaoEncontrado(EmployeeNotFoundException e) {
+        return e.getMessage();
+    }
 }

@@ -4,6 +4,7 @@ import com.arthur.leaveflow.dto.EmployeeRequest;
 import com.arthur.leaveflow.dto.EmployeeResponse;
 import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.exception.EmailAlreadyExistsException;
+import com.arthur.leaveflow.exception.EmployeeNotFoundException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +48,12 @@ public class EmployeeService {
         Page<Employee> funcionarios;
         funcionarios = employeeRepository.findAll(pageable);
         return funcionarios.map(this::toResponse);
+    }
+
+    public EmployeeResponse buscarFuncionarioPorId(Long id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Funcionário não encontrado!"));
+        return toResponse(employee);
     }
 
 }

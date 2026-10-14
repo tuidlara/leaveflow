@@ -21,12 +21,18 @@ public class EmployeeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EmployeeResponse createEmployee (@Valid @RequestBody EmployeeRequest request) {
+    public EmployeeResponse createEmployee(@Valid @RequestBody EmployeeRequest request) {
         return employeeService.criarFuncionario(request);
     }
 
     @GetMapping
-    public Page <EmployeeResponse> listAllEmployees(Pageable pageable) {
+    public Page<EmployeeResponse> listAllEmployees(Pageable pageable) {
         return employeeService.listarFuncionarios(pageable);
     }
+
+    @GetMapping("/{id}")
+    public EmployeeResponse findEmployeeById(@PathVariable Long id) {
+        return employeeService.buscarFuncionarioPorId(id);
+    }
+
 }
