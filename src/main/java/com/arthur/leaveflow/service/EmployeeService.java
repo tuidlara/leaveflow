@@ -35,7 +35,7 @@ public class EmployeeService {
     public EmployeeResponse criarFuncionario(EmployeeRequest request){
         Employee employee = toEntity(request);
         if(employeeRepository.existsByEmail(employee.getEmail())){
-            throw new EmailAlreadyExistsException("Email já existe");
+            throw new EmailAlreadyExistsException("Email já existe!");
         }
         Employee funcionarioSalvo = employeeRepository.save(employee);
         return toResponse(funcionarioSalvo);
