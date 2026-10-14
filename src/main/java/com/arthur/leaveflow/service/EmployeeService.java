@@ -5,6 +5,8 @@ import com.arthur.leaveflow.dto.EmployeeResponse;
 import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.exception.EmailAlreadyExistsException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,6 +41,12 @@ public class EmployeeService {
         }
         Employee funcionarioSalvo = employeeRepository.save(employee);
         return toResponse(funcionarioSalvo);
+    }
+
+    public Page<EmployeeResponse> listarFuncionarios(Pageable pageable){
+        Page<Employee> funcionarios;
+        funcionarios = employeeRepository.findAll(pageable);
+        return funcionarios.map(this::toResponse);
     }
 
 }
