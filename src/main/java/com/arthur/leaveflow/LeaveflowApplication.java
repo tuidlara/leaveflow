@@ -3,7 +3,7 @@ package com.arthur.leaveflow;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplicationg
+@SpringBootApplication
 public class LeaveflowApplication {
 
 	public static void main(String[] args) {
