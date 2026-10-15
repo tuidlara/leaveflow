@@ -4,6 +4,8 @@ import com.arthur.leaveflow.dto.LeaveRequestRequest;
 import com.arthur.leaveflow.dto.LeaveRequestResponse;
 import com.arthur.leaveflow.service.LeaveRequestService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,4 +29,10 @@ public class LeaveRequestController {
     public LeaveRequestResponse findLeaveRequestById(@PathVariable Long id) {
         return leaveRequestService.buscarSolicitacaoPorId(id);
     }
+
+    @GetMapping
+    public Page<LeaveRequestResponse> listAllLeaveRequests(Pageable pageable) {
+        return leaveRequestService.listarSolicitacoes(pageable);
+    }
+
 }

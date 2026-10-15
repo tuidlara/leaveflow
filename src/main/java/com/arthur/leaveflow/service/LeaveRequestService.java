@@ -1,5 +1,6 @@
 package com.arthur.leaveflow.service;
 
+import com.arthur.leaveflow.dto.EmployeeResponse;
 import com.arthur.leaveflow.dto.LeaveRequestRequest;
 import com.arthur.leaveflow.dto.LeaveRequestResponse;
 import com.arthur.leaveflow.entity.Employee;
@@ -9,6 +10,8 @@ import com.arthur.leaveflow.exception.InvalidLeaveRequestException;
 import com.arthur.leaveflow.exception.LeaveRequestNotFoundException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
 import com.arthur.leaveflow.repository.LeaveRequestRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -68,5 +71,10 @@ public class LeaveRequestService {
 
     }
 
+    public Page<LeaveRequestResponse> listarSolicitacoes(Pageable pageable) {
+        Page<LeaveRequest> solicitacoes;
+        solicitacoes = leaveRequestRepository.findAll(pageable);
+        return solicitacoes.map(this::toResponse);
+    }
 
 }
