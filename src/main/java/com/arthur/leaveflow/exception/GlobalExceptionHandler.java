@@ -1,6 +1,7 @@
 package com.arthur.leaveflow.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -23,6 +24,12 @@ public class GlobalExceptionHandler {
         });
 
         return erros;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String tratarErroLeituraJson(HttpMessageNotReadableException e) {
+        return "JSON inválido ou valor incompatível com o tipo esperado.";
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)

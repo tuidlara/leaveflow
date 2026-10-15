@@ -1,0 +1,25 @@
+package com.arthur.leaveflow.controller;
+
+import com.arthur.leaveflow.dto.LeaveRequestRequest;
+import com.arthur.leaveflow.dto.LeaveRequestResponse;
+import com.arthur.leaveflow.service.LeaveRequestService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/leave-requests")
+public class LeaveRequestController {
+
+    private final LeaveRequestService leaveRequestService;
+
+    public LeaveRequestController(LeaveRequestService leaveRequestService) {
+        this.leaveRequestService = leaveRequestService;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public LeaveRequestResponse createLeaveRequest(@Valid @RequestBody LeaveRequestRequest request) {
+        return leaveRequestService.criarSolicitacao(request);
+    }
+}
