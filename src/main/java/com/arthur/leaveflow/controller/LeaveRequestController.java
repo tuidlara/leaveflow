@@ -22,4 +22,9 @@ public class LeaveRequestController {
     public LeaveRequestResponse createLeaveRequest(@Valid @RequestBody LeaveRequestRequest request) {
         return leaveRequestService.criarSolicitacao(request);
     }
+
+    @GetMapping("/{id}")
+    public LeaveRequestResponse findLeaveRequestById(@PathVariable Long id) {
+        return leaveRequestService.buscarSolicitacaoPorId(id);
+    }
 }

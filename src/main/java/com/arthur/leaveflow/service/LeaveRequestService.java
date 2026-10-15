@@ -6,6 +6,7 @@ import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.entity.LeaveRequest;
 import com.arthur.leaveflow.exception.EmployeeNotFoundException;
 import com.arthur.leaveflow.exception.InvalidLeaveRequestException;
+import com.arthur.leaveflow.exception.LeaveRequestNotFoundException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
 import com.arthur.leaveflow.repository.LeaveRequestRepository;
 import org.springframework.stereotype.Service;
@@ -58,6 +59,13 @@ public class LeaveRequestService {
         LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
 
         return toResponse(savedRequest);
+    }
+
+    public LeaveRequestResponse buscarSolicitacaoPorId(Long id) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+        return toResponse(leaveRequest);
+
     }
 
 

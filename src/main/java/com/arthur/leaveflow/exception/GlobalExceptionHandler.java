@@ -49,4 +49,10 @@ public class GlobalExceptionHandler {
     public String tratarInvalidLeaveRequest(InvalidLeaveRequestException e) {
         return e.getMessage();
     }
+
+    @ExceptionHandler(LeaveRequestNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String tratarLeaveRequestNotFoundException(LeaveRequestNotFoundException e) {
+        return e.getMessage();
+    }
 }
