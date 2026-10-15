@@ -36,4 +36,10 @@ public class GlobalExceptionHandler {
     public String tratarEmployeeNaoEncontrado(EmployeeNotFoundException e) {
         return e.getMessage();
     }
+
+    @ExceptionHandler(InvalidLeaveRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String tratarInvalidLeaveRequest(InvalidLeaveRequestException e) {
+        return e.getMessage();
+    }
 }
