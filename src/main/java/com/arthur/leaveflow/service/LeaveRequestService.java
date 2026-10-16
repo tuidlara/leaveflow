@@ -108,6 +108,23 @@ public class LeaveRequestService {
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser aprovadas.");
         }
+
+        if (leaveRequest.getLeaveType() == LeaveType.VACATION) {
+            boolean hasOverlap = leaveRequestRepository.existsOverlappingRequest(
+                    leaveRequest.getEmployee().getId(),
+                    LeaveType.VACATION,
+                    LeaveStatus.APPROVED,
+                    leaveRequest.getStartDate(),
+                    leaveRequest.getEndDate(),
+                    leaveRequest.getId()
+            );
+
+            if (hasOverlap) {
+                throw new InvalidLeaveRequestException(
+                        "As férias não podem ser aprovadas porque se sobrepõem a outras férias já aprovadas."
+                );
+            }
+        }
         leaveRequest.aprovar(decidedBy);
 
         leaveRequestRepository.save(leaveRequest);
