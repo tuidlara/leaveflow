@@ -45,4 +45,11 @@ public class LeaveRequestController {
         return leaveRequestService.cancelarSolicitacao(id);
     }
 
+    @PatchMapping("/{id}/approve")
+    public LeaveRequestResponse approveRequest(
+            @PathVariable Long id,
+            @RequestParam String decidedBy) {
+        return leaveRequestService.aprovarSolicitacao(id, decidedBy);
+    }
+
 }

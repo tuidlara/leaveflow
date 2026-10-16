@@ -101,5 +101,18 @@ public class LeaveRequestService {
         return toResponse(leaveRequest);
     }
 
+    public LeaveRequestResponse aprovarSolicitacao(Long id, String decidedBy) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+
+        if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+            throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser aprovadas.");
+        }
+        leaveRequest.aprovar(decidedBy);
+
+        leaveRequestRepository.save(leaveRequest);
+
+        return toResponse(leaveRequest);
+    }
 
 }

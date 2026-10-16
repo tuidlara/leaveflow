@@ -139,4 +139,10 @@ public class LeaveRequest {
     public void cancelar() {
         this.status = LeaveStatus.CANCELLED;
     }
+
+    public void aprovar(String decidedBy) {
+        this.status = LeaveStatus.APPROVED;
+        this.decidedBy = decidedBy;
+        this.decidedAt = LocalDateTime.now();
+    }
 }
