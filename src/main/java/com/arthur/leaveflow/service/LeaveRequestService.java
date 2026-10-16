@@ -115,4 +115,23 @@ public class LeaveRequestService {
         return toResponse(leaveRequest);
     }
 
+    public LeaveRequestResponse rejeitarSolicitacao(Long id, String decidedBy, String decisionReason) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+
+        if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+            throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser rejeitadas.");
+        }
+
+        if (decisionReason == null || decisionReason.isBlank()) {
+            throw new InvalidLeaveRequestException("O motivo da rejeição é obrigatório.");
+        }
+        leaveRequest.rejeitar(decidedBy, decisionReason);
+
+        leaveRequestRepository.save(leaveRequest);
+
+        return toResponse(leaveRequest);
+
+    }
+
 }

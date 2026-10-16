@@ -145,4 +145,11 @@ public class LeaveRequest {
         this.decidedBy = decidedBy;
         this.decidedAt = LocalDateTime.now();
     }
+
+    public void rejeitar(String decidedBy, String decisionReason) {
+        this.status = LeaveStatus.REJECTED;
+        this.decidedBy = decidedBy;
+        this.decidedAt = LocalDateTime.now();
+        this.decisionReason = decisionReason;
+    }
 }

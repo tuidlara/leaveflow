@@ -52,4 +52,12 @@ public class LeaveRequestController {
         return leaveRequestService.aprovarSolicitacao(id, decidedBy);
     }
 
+    @PatchMapping("/{id}/reject")
+    public LeaveRequestResponse rejectRequest(
+            @PathVariable Long id,
+            @RequestParam String decidedBy,
+            @RequestParam String decisionReason) {
+        return leaveRequestService.rejeitarSolicitacao(id, decidedBy, decisionReason);
+    }
+
 }
