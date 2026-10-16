@@ -1,10 +1,11 @@
 package com.arthur.leaveflow.service;
 
-import com.arthur.leaveflow.dto.EmployeeResponse;
 import com.arthur.leaveflow.dto.LeaveRequestRequest;
 import com.arthur.leaveflow.dto.LeaveRequestResponse;
 import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.entity.LeaveRequest;
+import com.arthur.leaveflow.enums.LeaveStatus;
+import com.arthur.leaveflow.enums.LeaveType;
 import com.arthur.leaveflow.exception.EmployeeNotFoundException;
 import com.arthur.leaveflow.exception.InvalidLeaveRequestException;
 import com.arthur.leaveflow.exception.LeaveRequestNotFoundException;
@@ -71,9 +72,18 @@ public class LeaveRequestService {
 
     }
 
-    public Page<LeaveRequestResponse> listarSolicitacoes(Pageable pageable) {
+    public Page<LeaveRequestResponse> listarSolicitacoes(Pageable pageable, LeaveType leaveType, LeaveStatus status) {
         Page<LeaveRequest> solicitacoes;
-        solicitacoes = leaveRequestRepository.findAll(pageable);
+        if (leaveType != null && status != null) {
+            solicitacoes = leaveRequestRepository.findByStatusAndLeaveType(status, leaveType, pageable);
+        } else if (status != null) {
+            solicitacoes = leaveRequestRepository.findByStatus(status, pageable);
+        } else if (leaveType != null) {
+            solicitacoes = leaveRequestRepository.findByLeaveType(leaveType, pageable);
+        } else {
+            solicitacoes = leaveRequestRepository.findAll(pageable);
+        }
+
         return solicitacoes.map(this::toResponse);
     }
 

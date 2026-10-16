@@ -2,6 +2,8 @@ package com.arthur.leaveflow.controller;
 
 import com.arthur.leaveflow.dto.LeaveRequestRequest;
 import com.arthur.leaveflow.dto.LeaveRequestResponse;
+import com.arthur.leaveflow.enums.LeaveStatus;
+import com.arthur.leaveflow.enums.LeaveType;
 import com.arthur.leaveflow.service.LeaveRequestService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -31,8 +33,11 @@ public class LeaveRequestController {
     }
 
     @GetMapping
-    public Page<LeaveRequestResponse> listAllLeaveRequests(Pageable pageable) {
-        return leaveRequestService.listarSolicitacoes(pageable);
+    public Page<LeaveRequestResponse> listAllLeaveRequests(
+            Pageable pageable,
+            @RequestParam(required = false) LeaveType leaveType,
+            @RequestParam(required = false) LeaveStatus status) {
+        return leaveRequestService.listarSolicitacoes(pageable, leaveType, status);
     }
 
 }
