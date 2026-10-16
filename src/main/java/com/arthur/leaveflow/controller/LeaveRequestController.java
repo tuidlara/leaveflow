@@ -33,7 +33,7 @@ public class LeaveRequestController {
     }
 
     @GetMapping
-    public Page<LeaveRequestResponse> listAllLeaveRequests(
+    public Page<LeaveRequestResponse> listLeaveRequests(
             Pageable pageable,
             @RequestParam(required = false) LeaveType leaveType,
             @RequestParam(required = false) LeaveStatus status) {
