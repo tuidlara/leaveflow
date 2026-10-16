@@ -135,4 +135,8 @@ public class LeaveRequest {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
+
+    public void cancelar() {
+        this.status = LeaveStatus.CANCELLED;
+    }
 }

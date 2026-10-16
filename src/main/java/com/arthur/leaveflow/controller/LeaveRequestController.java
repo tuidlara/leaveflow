@@ -40,4 +40,9 @@ public class LeaveRequestController {
         return leaveRequestService.listarSolicitacoes(pageable, leaveType, status);
     }
 
+    @PatchMapping("/{id}/cancel")
+    public LeaveRequestResponse cancelRequest(@PathVariable Long id) {
+        return leaveRequestService.cancelarSolicitacao(id);
+    }
+
 }

@@ -87,4 +87,19 @@ public class LeaveRequestService {
         return solicitacoes.map(this::toResponse);
     }
 
+    public LeaveRequestResponse cancelarSolicitacao(Long id) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+
+        if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+            throw new InvalidLeaveRequestException("Solicitação só pode ser cancelada enquanto pendente");
+        }
+        leaveRequest.cancelar();
+
+        leaveRequestRepository.save(leaveRequest);
+
+        return toResponse(leaveRequest);
+    }
+
+
 }
