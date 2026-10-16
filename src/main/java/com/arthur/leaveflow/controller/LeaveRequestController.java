@@ -56,7 +56,7 @@ public class LeaveRequestController {
     public LeaveRequestResponse rejectRequest(
             @PathVariable Long id,
             @RequestParam String decidedBy,
-            @RequestParam String decisionReason) {
+            @RequestParam(required = false) String decisionReason) {
         return leaveRequestService.rejeitarSolicitacao(id, decidedBy, decisionReason);
     }
 
