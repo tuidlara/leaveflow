@@ -137,19 +137,30 @@ public class LeaveRequest {
     }
 
     public void cancelar() {
+        validarPendente();
         this.status = LeaveStatus.CANCELLED;
     }
 
     public void aprovar(String decidedBy) {
+        validarPendente();
         this.status = LeaveStatus.APPROVED;
         this.decidedBy = decidedBy;
         this.decidedAt = LocalDateTime.now();
     }
 
     public void rejeitar(String decidedBy, String decisionReason) {
+        validarPendente();
         this.status = LeaveStatus.REJECTED;
         this.decidedBy = decidedBy;
         this.decidedAt = LocalDateTime.now();
         this.decisionReason = decisionReason;
+    }
+
+    private void validarPendente() {
+        if (this.status != LeaveStatus.PENDING) {
+            throw new IllegalStateException(
+                    "A solicitação só pode ser alterada enquanto estiver pendente."
+            );
+        }
     }
 }
