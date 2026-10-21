@@ -25,6 +25,13 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    public User(String email, String senha, Role role, Employee employee) {
+        this.email = email;
+        this.senha = senha;
+        this.role = role;
+        this.employee = employee;
+    }
+
     public User(String email, String senha, Role role) {
         this.email = email;
         this.senha = senha;
