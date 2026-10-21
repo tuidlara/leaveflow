@@ -68,10 +68,6 @@ public class LeaveRequest {
         return decidedAt;
     }
 
-    public void setDecidedAt(LocalDateTime decidedAt) {
-        this.decidedAt = decidedAt;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -80,16 +76,8 @@ public class LeaveRequest {
         return decidedBy;
     }
 
-    public void setDecidedBy(String decidedBy) {
-        this.decidedBy = decidedBy;
-    }
-
     public String getDecisionReason() {
         return decisionReason;
-    }
-
-    public void setDecisionReason(String decisionReason) {
-        this.decisionReason = decisionReason;
     }
 
     public LeaveStatus getStatus() {
@@ -100,40 +88,20 @@ public class LeaveRequest {
         return reason;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
     public LocalDate getEndDate() {
         return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
     }
 
     public LocalDate getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
     public LeaveType getLeaveType() {
         return leaveType;
     }
 
-    public void setLeaveType(LeaveType leaveType) {
-        this.leaveType = leaveType;
-    }
-
     public Employee getEmployee() {
         return employee;
-    }
-
-    public void setEmployee(Employee employee) {
-        this.employee = employee;
     }
 
     public void cancelar() {
