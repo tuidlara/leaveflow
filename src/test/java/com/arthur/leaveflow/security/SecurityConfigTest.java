@@ -10,6 +10,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,14 +35,19 @@ class SecurityConfigTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private void criarUsuarioDeTeste() {
+    @BeforeEach
+    void limparBanco() {
+        userRepository.deleteAll();
+    }
+
+    private User criarUsuarioDeTeste() {
         User user = new User(
                 "teste@leaveflow.com",
                 passwordEncoder.encode("senha-correta"),
                 Role.ADMIN
         );
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Test
@@ -59,11 +65,7 @@ class SecurityConfigTest {
 
     @Test
     void devePermitirAcessoQuandoTokenForValido() throws Exception {
-        User user = new User(
-                "admin@leaveflow.com",
-                "senha-criptografada",
-                Role.ADMIN
-        );
+        User user = criarUsuarioDeTeste();
 
         String token = jwtService.gerarToken(user);
 
@@ -92,11 +94,11 @@ class SecurityConfigTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                                "email": "teste@leaveflow.com",
-                                "senha": "senha-correta"
-                            }
-                            """))
+                                {
+                                    "email": "teste@leaveflow.com",
+                                    "senha": "senha-correta"
+                                }
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(result ->
                         org.junit.jupiter.api.Assertions.assertFalse(
@@ -109,11 +111,11 @@ class SecurityConfigTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                                "email": "inexistente@leaveflow.com",
-                                "senha": "qualquer-senha"
-                            }
-                            """))
+                                {
+                                    "email": "inexistente@leaveflow.com",
+                                    "senha": "qualquer-senha"
+                                }
+                                """))
                 .andExpect(status().isUnauthorized());
     }
 }
