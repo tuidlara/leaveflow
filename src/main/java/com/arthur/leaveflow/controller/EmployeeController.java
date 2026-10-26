@@ -1,6 +1,7 @@
 package com.arthur.leaveflow.controller;
 
-import com.arthur.leaveflow.dto.EmployeeRequest;
+import com.arthur.leaveflow.dto.EmployeeRegistrationRequest;
+import com.arthur.leaveflow.dto.EmployeeRegistrationResponse;
 import com.arthur.leaveflow.dto.EmployeeResponse;
 import com.arthur.leaveflow.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -21,7 +22,7 @@ public class EmployeeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EmployeeResponse createEmployee(@Valid @RequestBody EmployeeRequest request) {
+    public EmployeeRegistrationResponse createEmployee(@Valid @RequestBody EmployeeRegistrationRequest request) {
         return employeeService.criarFuncionario(request);
     }
 

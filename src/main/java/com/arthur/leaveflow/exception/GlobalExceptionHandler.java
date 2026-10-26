@@ -55,4 +55,10 @@ public class GlobalExceptionHandler {
     public String tratarLeaveRequestNotFoundException(LeaveRequestNotFoundException e) {
         return e.getMessage();
     }
+
+    @ExceptionHandler(InvalidRoleException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String tratarInvalidRole(InvalidRoleException e) {
+        return e.getMessage();
+    }
 }
