@@ -23,7 +23,7 @@ jobs:
 
       - name: Rodar testes
         env:
-          JWT_SECRET: chave-secreta-de-teste-do-ci-2026
+          JWT_SECRET: FVRtiBp6dddxKYrEppBb7C6CGSm17une7SHLrgNNyHI=
           ADMIN_EMAIL: admin@leaveflow.test
           ADMIN_PASSWORD: senha-temporaria-testes
         run: ./mvnw test
