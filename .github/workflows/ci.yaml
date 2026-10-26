@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Rodar testes
+        env:
+          JWT_SECRET: chave-secreta-de-teste-do-ci-2026
+          ADMIN_EMAIL: admin@leaveflow.test
+          ADMIN_PASSWORD: senha-temporaria-testes
+        run: ./mvnw test
