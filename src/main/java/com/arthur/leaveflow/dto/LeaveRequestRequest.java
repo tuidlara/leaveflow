@@ -9,10 +9,6 @@ import java.time.LocalDate;
 
 public record LeaveRequestRequest(
 
-        @NotNull(message = "ID do funcionário precisa ser informado.")
-        @Positive
-        Long employeeId,
-
         @NotNull(message = "Tipo de solicitação precisa ser informado.")
         LeaveType leaveType,
 
