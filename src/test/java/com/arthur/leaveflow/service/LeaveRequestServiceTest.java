@@ -1,16 +1,20 @@
+
 package com.arthur.leaveflow.service;
 
 import com.arthur.leaveflow.dto.LeaveRequestRequest;
 import com.arthur.leaveflow.dto.LeaveRequestResponse;
 import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.entity.LeaveRequest;
+import com.arthur.leaveflow.entity.User;
 import com.arthur.leaveflow.enums.LeaveStatus;
 import com.arthur.leaveflow.enums.LeaveType;
-import com.arthur.leaveflow.exception.EmployeeNotFoundException;
+import com.arthur.leaveflow.enums.Role;
 import com.arthur.leaveflow.exception.InvalidLeaveRequestException;
 import com.arthur.leaveflow.exception.LeaveRequestNotFoundException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
 import com.arthur.leaveflow.repository.LeaveRequestRepository;
+import com.arthur.leaveflow.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +24,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,15 +44,75 @@ class LeaveRequestServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private LeaveRequestService leaveRequestService;
 
+    private static final String EMAIL_FUNCIONARIO = "funcionario@teste.com";
+    private static final String EMAIL_ADMIN = "admin@teste.com";
+
+    @AfterEach
+    void limparAutenticacao() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void autenticarFuncionario(Employee funcionario) {
+        User usuario = new User(
+                EMAIL_FUNCIONARIO,
+                "senha",
+                Role.EMPLOYEE,
+                funcionario
+        );
+
+        when(userRepository.findByEmail(EMAIL_FUNCIONARIO))
+                .thenReturn(Optional.of(usuario));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        EMAIL_FUNCIONARIO,
+                        null,
+                        List.of(() -> "ROLE_EMPLOYEE")
+                )
+        );
+    }
+
+    private void autenticarAdmin() {
+        User usuario = new User(
+                EMAIL_ADMIN,
+                "senha",
+                Role.ADMIN
+        );
+
+        when(userRepository.findByEmail(EMAIL_ADMIN))
+                .thenReturn(Optional.of(usuario));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        EMAIL_ADMIN,
+                        null,
+                        List.of(() -> "ROLE_ADMIN")
+                )
+        );
+    }
+
+    private LeaveRequest criarSolicitacao(
+            Employee funcionario,
+            LeaveType tipo,
+            LocalDate inicio,
+            LocalDate fim,
+            String motivo
+    ) {
+        return new LeaveRequest(funcionario, tipo, inicio, fim, motivo);
+    }
+
     @Test
     void naoDeveAprovarSolicitacaoQueNaoEstaPendente() {
-        Employee employee = new Employee();
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        Employee funcionario = new Employee();
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -65,11 +131,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveAprovarSolicitacaoPendente() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -77,7 +142,6 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
-
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);
 
@@ -102,11 +166,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveAprovarFeriasComDatasSobrepostas() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 5, 15),
                 LocalDate.of(2027, 5, 25),
                 "Viagem"
@@ -114,13 +177,12 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
-
         when(leaveRequestRepository.existsOverlappingRequest(
-                employee.getId(),
+                funcionario.getId(),
                 LeaveType.VACATION,
                 LeaveStatus.APPROVED,
-                LocalDate.of(2027, 5, 15),
-                LocalDate.of(2027, 5, 25),
+                solicitacao.getStartDate(),
+                solicitacao.getEndDate(),
                 solicitacao.getId()
         )).thenReturn(true);
 
@@ -132,11 +194,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveAprovarFeriasQuandoNaoExisteSobreposicao() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 5, 21),
                 LocalDate.of(2027, 5, 30),
                 "Viagem"
@@ -144,16 +205,14 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
-
         when(leaveRequestRepository.existsOverlappingRequest(
-                employee.getId(),
+                funcionario.getId(),
                 LeaveType.VACATION,
                 LeaveStatus.APPROVED,
                 solicitacao.getStartDate(),
                 solicitacao.getEndDate(),
                 solicitacao.getId()
         )).thenReturn(false);
-
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);
 
@@ -167,11 +226,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveRejeitarSolicitacaoQueJaFoiAprovada() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -192,11 +250,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveRejeitarSolicitacaoPendente() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -204,7 +261,6 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
-
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);
 
@@ -221,11 +277,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveRejeitarSolicitacaoSemMotivo() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -244,11 +299,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveAprovarSolicitacaoCancelada() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -267,11 +321,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveCancelarSolicitacaoPendente() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -279,7 +332,6 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
-
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);
 
@@ -291,11 +343,10 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveCancelarSolicitacaoJaDecidida() {
-        Employee employee = new Employee();
+        Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                employee,
-                LeaveType.ABSENCE,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.ABSENCE,
                 LocalDate.of(2027, 5, 10),
                 LocalDate.of(2027, 5, 12),
                 "Consulta médica"
@@ -315,17 +366,14 @@ class LeaveRequestServiceTest {
     @Test
     void deveCriarSolicitacaoDeFerias() {
         Employee funcionario = new Employee();
+        autenticarFuncionario(funcionario);
 
         LeaveRequestRequest dto = new LeaveRequestRequest(
-                1L,
                 LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
-                "Férias anuais"
+                "Viagem em família"
         );
-
-        when(employeeRepository.findById(1L))
-                .thenReturn(Optional.of(funcionario));
 
         when(leaveRequestRepository.save(any(LeaveRequest.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -345,17 +393,14 @@ class LeaveRequestServiceTest {
     @Test
     void naoDeveCriarSolicitacaoComDatasInvalidas() {
         Employee funcionario = new Employee();
+        autenticarFuncionario(funcionario);
 
         LeaveRequestRequest dto = new LeaveRequestRequest(
-                1L,
                 LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 10),
                 "Férias anuais"
         );
-
-        when(employeeRepository.findById(1L))
-                .thenReturn(Optional.of(funcionario));
 
         assertThrows(
                 InvalidLeaveRequestException.class,
@@ -367,20 +412,33 @@ class LeaveRequestServiceTest {
     }
 
     @Test
-    void naoDeveCriarSolicitacaoQuandoFuncionarioNaoExiste() {
+    void naoDeveCriarSolicitacaoQuandoUsuarioNaoEstaVinculadoAFuncionario() {
+        User usuario = new User(
+                EMAIL_FUNCIONARIO,
+                "senha",
+                Role.EMPLOYEE
+        );
+
+        when(userRepository.findByEmail(EMAIL_FUNCIONARIO))
+                .thenReturn(Optional.of(usuario));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        EMAIL_FUNCIONARIO,
+                        null,
+                        List.of(() -> "ROLE_EMPLOYEE")
+                )
+        );
+
         LeaveRequestRequest dto = new LeaveRequestRequest(
-                1L,
                 LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
         );
 
-        when(employeeRepository.findById(1L))
-                .thenReturn(Optional.empty());
-
         assertThrows(
-                EmployeeNotFoundException.class,
+                InvalidLeaveRequestException.class,
                 () -> leaveRequestService.criarSolicitacao(dto)
         );
 
@@ -401,11 +459,12 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveBuscarSolicitacaoPorId() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                funcionario,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
@@ -430,16 +489,14 @@ class LeaveRequestServiceTest {
     void deveListarSolicitacoesSemFiltros() {
         Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                funcionario,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
         );
 
         Pageable pageable = PageRequest.of(0, 10);
-
         Page<LeaveRequest> pagina =
                 new PageImpl<>(List.of(solicitacao), pageable, 1);
 
@@ -450,8 +507,14 @@ class LeaveRequestServiceTest {
                 leaveRequestService.listarSolicitacoes(pageable, null, null);
 
         assertEquals(1, resposta.getTotalElements());
-        assertEquals(LeaveType.VACATION, resposta.getContent().get(0).leaveType());
-        assertEquals(LeaveStatus.PENDING, resposta.getContent().get(0).status());
+        assertEquals(
+                LeaveType.VACATION,
+                resposta.getContent().get(0).leaveType()
+        );
+        assertEquals(
+                LeaveStatus.PENDING,
+                resposta.getContent().get(0).status()
+        );
 
         verify(leaveRequestRepository).findAll(pageable);
     }
@@ -460,21 +523,20 @@ class LeaveRequestServiceTest {
     void deveListarSolicitacoesPorStatus() {
         Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                funcionario,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
         );
 
         Pageable pageable = PageRequest.of(0, 10);
-
         Page<LeaveRequest> pagina =
                 new PageImpl<>(List.of(solicitacao), pageable, 1);
 
-        when(leaveRequestRepository.findByStatus(LeaveStatus.PENDING, pageable))
-                .thenReturn(pagina);
+        when(leaveRequestRepository.findByStatus(
+                LeaveStatus.PENDING, pageable
+        )).thenReturn(pagina);
 
         Page<LeaveRequestResponse> resposta =
                 leaveRequestService.listarSolicitacoes(
@@ -482,30 +544,33 @@ class LeaveRequestServiceTest {
                 );
 
         assertEquals(1, resposta.getTotalElements());
-        assertEquals(LeaveStatus.PENDING, resposta.getContent().get(0).status());
+        assertEquals(
+                LeaveStatus.PENDING,
+                resposta.getContent().get(0).status()
+        );
 
-        verify(leaveRequestRepository).findByStatus(LeaveStatus.PENDING, pageable);
+        verify(leaveRequestRepository)
+                .findByStatus(LeaveStatus.PENDING, pageable);
     }
 
     @Test
     void deveListarSolicitacoesPorTipo() {
         Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                funcionario,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
         );
 
         Pageable pageable = PageRequest.of(0, 10);
-
         Page<LeaveRequest> pagina =
                 new PageImpl<>(List.of(solicitacao), pageable, 1);
 
-        when(leaveRequestRepository.findByLeaveType(LeaveType.VACATION, pageable))
-                .thenReturn(pagina);
+        when(leaveRequestRepository.findByLeaveType(
+                LeaveType.VACATION, pageable
+        )).thenReturn(pagina);
 
         Page<LeaveRequestResponse> resposta =
                 leaveRequestService.listarSolicitacoes(
@@ -526,34 +591,44 @@ class LeaveRequestServiceTest {
     void deveListarSolicitacoesPorTipoEStatus() {
         Employee funcionario = new Employee();
 
-        LeaveRequest solicitacao = new LeaveRequest(
-                funcionario,
-                LeaveType.VACATION,
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario, LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
                 LocalDate.of(2027, 1, 20),
                 "Férias anuais"
         );
 
         Pageable pageable = PageRequest.of(0, 10);
-
         Page<LeaveRequest> pagina =
                 new PageImpl<>(List.of(solicitacao), pageable, 1);
 
         when(leaveRequestRepository.findByStatusAndLeaveType(
-                LeaveStatus.PENDING, LeaveType.VACATION, pageable
+                LeaveStatus.PENDING,
+                LeaveType.VACATION,
+                pageable
         )).thenReturn(pagina);
 
         Page<LeaveRequestResponse> resposta =
                 leaveRequestService.listarSolicitacoes(
-                        pageable, LeaveType.VACATION, LeaveStatus.PENDING
+                        pageable,
+                        LeaveType.VACATION,
+                        LeaveStatus.PENDING
                 );
 
         assertEquals(1, resposta.getTotalElements());
-        assertEquals(LeaveType.VACATION, resposta.getContent().get(0).leaveType());
-        assertEquals(LeaveStatus.PENDING, resposta.getContent().get(0).status());
+        assertEquals(
+                LeaveType.VACATION,
+                resposta.getContent().get(0).leaveType()
+        );
+        assertEquals(
+                LeaveStatus.PENDING,
+                resposta.getContent().get(0).status()
+        );
 
         verify(leaveRequestRepository).findByStatusAndLeaveType(
-                LeaveStatus.PENDING, LeaveType.VACATION, pageable
+                LeaveStatus.PENDING,
+                LeaveType.VACATION,
+                pageable
         );
     }
 }
