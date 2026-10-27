@@ -321,6 +321,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveCancelarSolicitacaoPendente() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -343,6 +345,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveCancelarSolicitacaoJaDecidida() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
