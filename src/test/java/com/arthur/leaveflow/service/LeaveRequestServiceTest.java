@@ -487,6 +487,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveListarSolicitacoesSemFiltros() {
+
+        autenticarAdmin();
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -521,6 +523,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveListarSolicitacoesPorStatus() {
+
+        autenticarAdmin();
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -555,6 +559,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveListarSolicitacoesPorTipo() {
+
+        autenticarAdmin();
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -589,6 +595,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveListarSolicitacoesPorTipoEStatus() {
+
+        autenticarAdmin();
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
