@@ -229,9 +229,25 @@ public class LeaveRequestService {
     }
 
 
-    public LeaveRequestResponse aprovarSolicitacao(Long id, String decidedBy) {
+    public LeaveRequestResponse aprovarSolicitacao(Long id) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
                 .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Usuário autenticado não encontrado."
+                ));
+
+        if (user.getRole() != Role.ADMIN && user.getRole() != Role.SUPERVISOR) {
+            throw new AccessDeniedException("Você não tem permissão para aprovar solicitações.");
+        }
 
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser aprovadas.");
@@ -253,16 +269,33 @@ public class LeaveRequestService {
                 );
             }
         }
-        leaveRequest.aprovar(decidedBy);
+        leaveRequest.aprovar(authentication.getName());
 
         leaveRequestRepository.save(leaveRequest);
 
         return toResponse(leaveRequest);
     }
 
-    public LeaveRequestResponse rejeitarSolicitacao(Long id, String decidedBy, String decisionReason) {
+    public LeaveRequestResponse rejeitarSolicitacao(Long id, String decisionReason) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
                 .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Usuário autenticado não encontrado."
+                ));
+
+
+        if (user.getRole() != Role.ADMIN && user.getRole() != Role.SUPERVISOR) {
+            throw new AccessDeniedException("Você não tem permissão para rejeitar solicitações.");
+        }
 
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser rejeitadas.");
@@ -271,7 +304,7 @@ public class LeaveRequestService {
         if (decisionReason == null || decisionReason.isBlank()) {
             throw new InvalidLeaveRequestException("O motivo da rejeição é obrigatório.");
         }
-        leaveRequest.rejeitar(decidedBy, decisionReason);
+        leaveRequest.rejeitar(authentication.getName(), decisionReason);
 
         leaveRequestRepository.save(leaveRequest);
 

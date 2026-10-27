@@ -109,6 +109,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void naoDeveAprovarSolicitacaoQueNaoEstaPendente() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -125,12 +127,14 @@ class LeaveRequestServiceTest {
 
         assertThrows(
                 InvalidLeaveRequestException.class,
-                () -> leaveRequestService.aprovarSolicitacao(1L, "Gestor")
+                () -> leaveRequestService.aprovarSolicitacao(1L)
         );
     }
 
     @Test
     void deveAprovarSolicitacaoPendente() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -146,10 +150,10 @@ class LeaveRequestServiceTest {
                 .thenReturn(solicitacao);
 
         LeaveRequestResponse resposta =
-                leaveRequestService.aprovarSolicitacao(1L, "Gestor");
+                leaveRequestService.aprovarSolicitacao(1L);
 
         assertEquals(LeaveStatus.APPROVED, resposta.status());
-        assertEquals("Gestor", resposta.decidedBy());
+        assertEquals(EMAIL_ADMIN, resposta.decidedBy());
         assertNotNull(resposta.decidedAt());
     }
 
@@ -160,12 +164,14 @@ class LeaveRequestServiceTest {
 
         assertThrows(
                 LeaveRequestNotFoundException.class,
-                () -> leaveRequestService.aprovarSolicitacao(999L, "Gestor")
+                () -> leaveRequestService.aprovarSolicitacao(999L)
         );
     }
 
     @Test
     void naoDeveAprovarFeriasComDatasSobrepostas() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -188,12 +194,14 @@ class LeaveRequestServiceTest {
 
         assertThrows(
                 InvalidLeaveRequestException.class,
-                () -> leaveRequestService.aprovarSolicitacao(1L, "Gestor")
+                () -> leaveRequestService.aprovarSolicitacao(1L)
         );
     }
 
     @Test
     void deveAprovarFeriasQuandoNaoExisteSobreposicao() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -217,15 +225,17 @@ class LeaveRequestServiceTest {
                 .thenReturn(solicitacao);
 
         LeaveRequestResponse resposta =
-                leaveRequestService.aprovarSolicitacao(1L, "Gestor");
+                leaveRequestService.aprovarSolicitacao(1L);
 
         assertEquals(LeaveStatus.APPROVED, resposta.status());
-        assertEquals("Gestor", resposta.decidedBy());
+        assertEquals(EMAIL_ADMIN, resposta.decidedBy());
         assertNotNull(resposta.decidedAt());
     }
 
     @Test
     void naoDeveRejeitarSolicitacaoQueJaFoiAprovada() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -243,13 +253,15 @@ class LeaveRequestServiceTest {
         assertThrows(
                 InvalidLeaveRequestException.class,
                 () -> leaveRequestService.rejeitarSolicitacao(
-                        1L, "Gestor", "Motivo do teste"
+                        1L, "Motivo do teste"
                 )
         );
     }
 
     @Test
     void deveRejeitarSolicitacaoPendente() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -266,17 +278,19 @@ class LeaveRequestServiceTest {
 
         LeaveRequestResponse resposta =
                 leaveRequestService.rejeitarSolicitacao(
-                        1L, "Gestor", "Período indisponível"
+                        1L, "Período indisponível"
                 );
 
         assertEquals(LeaveStatus.REJECTED, resposta.status());
-        assertEquals("Gestor", resposta.decidedBy());
+        assertEquals(EMAIL_ADMIN, resposta.decidedBy());
         assertEquals("Período indisponível", resposta.decisionReason());
         assertNotNull(resposta.decidedAt());
     }
 
     @Test
     void naoDeveRejeitarSolicitacaoSemMotivo() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -291,14 +305,14 @@ class LeaveRequestServiceTest {
 
         assertThrows(
                 InvalidLeaveRequestException.class,
-                () -> leaveRequestService.rejeitarSolicitacao(
-                        1L, "Gestor", " "
-                )
+                () -> leaveRequestService.rejeitarSolicitacao(1L, " ")
         );
     }
 
     @Test
     void naoDeveAprovarSolicitacaoCancelada() {
+        autenticarAdmin();
+
         Employee funcionario = new Employee();
 
         LeaveRequest solicitacao = criarSolicitacao(
@@ -315,7 +329,7 @@ class LeaveRequestServiceTest {
 
         assertThrows(
                 InvalidLeaveRequestException.class,
-                () -> leaveRequestService.aprovarSolicitacao(1L, "Gestor")
+                () -> leaveRequestService.aprovarSolicitacao(1L)
         );
     }
 

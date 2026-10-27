@@ -47,17 +47,15 @@ public class LeaveRequestController {
 
     @PatchMapping("/{id}/approve")
     public LeaveRequestResponse approveRequest(
-            @PathVariable Long id,
-            @RequestParam String decidedBy) {
-        return leaveRequestService.aprovarSolicitacao(id, decidedBy);
+            @PathVariable Long id) {
+        return leaveRequestService.aprovarSolicitacao(id);
     }
 
     @PatchMapping("/{id}/reject")
     public LeaveRequestResponse rejectRequest(
             @PathVariable Long id,
-            @RequestParam String decidedBy,
             @RequestParam(required = false) String decisionReason) {
-        return leaveRequestService.rejeitarSolicitacao(id, decidedBy, decisionReason);
+        return leaveRequestService.rejeitarSolicitacao(id, decisionReason);
     }
 
 }
