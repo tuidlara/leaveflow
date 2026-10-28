@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -529,6 +530,130 @@ class LeaveRequestServiceTest {
         assertEquals(LocalDate.of(2027, 1, 20), resposta.endDate());
 
         verify(leaveRequestRepository).findById(1L);
+    }
+
+    @Test
+    void naoDeveBuscarSolicitacaoDeOutroFuncionario() {
+        Employee funcionarioLogado = mock(Employee.class);
+        when(funcionarioLogado.getId()).thenReturn(1L);
+
+        Employee outroFuncionario = mock(Employee.class);
+        when(outroFuncionario.getId()).thenReturn(2L);
+
+        autenticarFuncionario(funcionarioLogado);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                outroFuncionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(2L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> leaveRequestService.buscarSolicitacaoPorId(2L)
+        );
+    }
+
+    @Test
+    void deveListarApenasSolicitacoesDoFuncionarioAutenticado() {
+        Employee funcionarioLogado = mock(Employee.class);
+        when(funcionarioLogado.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionarioLogado);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<LeaveRequest> paginaVazia =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(leaveRequestRepository.findByEmployeeId(1L, pageable))
+                .thenReturn(paginaVazia);
+
+        Page<LeaveRequestResponse> resposta =
+                leaveRequestService.listarSolicitacoes(
+                        pageable, null, null
+                );
+
+        assertEquals(0, resposta.getTotalElements());
+
+        verify(leaveRequestRepository)
+                .findByEmployeeId(1L, pageable);
+
+        verify(leaveRequestRepository, never())
+                .findAll(any(Pageable.class));
+    }
+
+    @Test
+    void deveFiltrarSolicitacoesDoFuncionarioPorStatus() {
+        Employee funcionarioLogado = mock(Employee.class);
+        when(funcionarioLogado.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionarioLogado);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<LeaveRequest> paginaVazia =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(leaveRequestRepository.findByEmployeeIdAndStatus(
+                1L, LeaveStatus.PENDING, pageable
+        )).thenReturn(paginaVazia);
+
+        Page<LeaveRequestResponse> resposta =
+                leaveRequestService.listarSolicitacoes(
+                        pageable, null, LeaveStatus.PENDING
+                );
+
+        assertEquals(0, resposta.getTotalElements());
+
+        verify(leaveRequestRepository).findByEmployeeIdAndStatus(
+                1L, LeaveStatus.PENDING, pageable
+        );
+
+        verify(leaveRequestRepository, never())
+                .findByStatus(eq(LeaveStatus.PENDING), any(Pageable.class));
+    }
+
+    @Test
+    void deveFiltrarSolicitacoesDoFuncionarioPorTipoEStatus() {
+        Employee funcionarioLogado = mock(Employee.class);
+        when(funcionarioLogado.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionarioLogado);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<LeaveRequest> paginaVazia =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(leaveRequestRepository.findByEmployeeIdAndStatusAndLeaveType(
+                1L,
+                LeaveStatus.PENDING,
+                LeaveType.VACATION,
+                pageable
+        )).thenReturn(paginaVazia);
+
+        Page<LeaveRequestResponse> resposta =
+                leaveRequestService.listarSolicitacoes(
+                        pageable,
+                        LeaveType.VACATION,
+                        LeaveStatus.PENDING
+                );
+
+        assertEquals(0, resposta.getTotalElements());
+
+        verify(leaveRequestRepository)
+                .findByEmployeeIdAndStatusAndLeaveType(
+                        1L,
+                        LeaveStatus.PENDING,
+                        LeaveType.VACATION,
+                        pageable
+                );
     }
 
     @Test
