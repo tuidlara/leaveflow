@@ -4,9 +4,15 @@ import com.arthur.leaveflow.enums.Role;
 import com.arthur.leaveflow.repository.UserRepository;
 import com.arthur.leaveflow.service.UserService;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+        name = "admin.initializer.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class AdminInitializer implements CommandLineRunner {
 
     private final UserService userService;
@@ -36,6 +42,5 @@ public class AdminInitializer implements CommandLineRunner {
         }
 
         userService.criarUsuario(email, senha, Role.ADMIN, null);
-
     }
 }

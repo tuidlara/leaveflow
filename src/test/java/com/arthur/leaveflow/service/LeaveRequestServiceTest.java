@@ -409,13 +409,41 @@ class LeaveRequestServiceTest {
     }
 
     @Test
-    void naoDeveCriarSolicitacaoComDatasInvalidas() {
+    void deveCriarSolicitacaoDeUmDia() {
         Employee funcionario = new Employee();
         autenticarFuncionario(funcionario);
 
         LeaveRequestRequest dto = new LeaveRequestRequest(
                 LeaveType.VACATION,
                 LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 10),
+                "Viagem"
+        );
+
+        when(leaveRequestRepository.save(any(LeaveRequest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.criarSolicitacao(dto);
+
+        assertNotNull(resposta);
+        assertEquals(LeaveStatus.PENDING, resposta.status());
+        assertEquals(LeaveType.VACATION, resposta.leaveType());
+        assertEquals(LocalDate.of(2027, 1, 10), resposta.startDate());
+        assertEquals(LocalDate.of(2027, 1, 10), resposta.endDate());
+
+        verify(leaveRequestRepository).save(any(LeaveRequest.class));
+
+    }
+
+    @Test
+    void naoDeveCriarSolicitacaoComDatasInvalidas() {
+        Employee funcionario = new Employee();
+        autenticarFuncionario(funcionario);
+
+        LeaveRequestRequest dto = new LeaveRequestRequest(
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 11),
                 LocalDate.of(2027, 1, 10),
                 "Férias anuais"
         );

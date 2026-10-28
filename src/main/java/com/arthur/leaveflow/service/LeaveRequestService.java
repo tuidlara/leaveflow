@@ -74,7 +74,7 @@ public class LeaveRequestService {
             );
         }
 
-        if (!request.startDate().isBefore(request.endDate())) {
+        if (request.startDate().isAfter(request.endDate())) {
             throw new InvalidLeaveRequestException(
                     "A data inicial deve ser anterior à data final."
             );
