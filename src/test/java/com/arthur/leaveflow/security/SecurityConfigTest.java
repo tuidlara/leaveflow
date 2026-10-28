@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.junit.jupiter.api.BeforeEach;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,11 +41,11 @@ class SecurityConfigTest {
         userRepository.deleteAll();
     }
 
-    private User criarUsuarioDeTeste() {
+    private User criarUsuarioDeTeste(Role role) {
         User user = new User(
                 "teste@leaveflow.com",
                 passwordEncoder.encode("senha-correta"),
-                Role.ADMIN
+                role
         );
 
         return userRepository.save(user);
@@ -65,7 +66,7 @@ class SecurityConfigTest {
 
     @Test
     void devePermitirAcessoQuandoTokenForValido() throws Exception {
-        User user = criarUsuarioDeTeste();
+        User user = criarUsuarioDeTeste(Role.ADMIN);
 
         String token = jwtService.gerarToken(user);
 
@@ -89,7 +90,7 @@ class SecurityConfigTest {
 
     @Test
     void deveRetornarTokenQuandoCredenciaisForemValidas() throws Exception {
-        criarUsuarioDeTeste();
+        criarUsuarioDeTeste(Role.ADMIN);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,5 +118,35 @@ class SecurityConfigTest {
                                 }
                                 """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deveRetornar403QuandoFuncionarioTentarAprovarSolicitacao() throws Exception {
+        User user = criarUsuarioDeTeste(Role.EMPLOYEE);
+        String token = jwtService.gerarToken(user);
+
+        mockMvc.perform(post("/leave-requests/1/approve")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void devePermitirAcessoDeSupervisorNaRotaDeAprovacao() throws Exception {
+        User user = criarUsuarioDeTeste(Role.SUPERVISOR);
+        String token = jwtService.gerarToken(user);
+
+        mockMvc.perform(patch("/leave-requests/1/approve")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void devePermitirAcessoDeAdminNaRotaDeAprovacao() throws Exception {
+        User user = criarUsuarioDeTeste(Role.ADMIN);
+        String token = jwtService.gerarToken(user);
+
+        mockMvc.perform(patch("/leave-requests/1/approve")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
     }
 }

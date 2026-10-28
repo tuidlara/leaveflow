@@ -50,6 +50,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/employees/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/leave-requests/*/approve",
+                                "/leave-requests/*/reject"
+                        ).hasAnyRole("ADMIN", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
