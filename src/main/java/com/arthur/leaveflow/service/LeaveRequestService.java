@@ -22,6 +22,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import com.arthur.leaveflow.repository.UserRepository;
 
+import java.util.Objects;
+
 @Service
 public class LeaveRequestService {
 
@@ -280,6 +282,37 @@ public class LeaveRequestService {
             throw new AccessDeniedException("Você não tem permissão para aprovar solicitações.");
         }
 
+        if (user.getRole() == Role.SUPERVISOR) {
+            if (user.getEmployee() == null
+                    || user.getEmployee().getDepartment() == null
+                    || user.getEmployee().getDepartment().isBlank()) {
+                throw new AccessDeniedException(
+                        "Supervisor não está vinculado a um departamento."
+                );
+            }
+
+            String supervisorDepartment = user.getEmployee().getDepartment();
+            String requestDepartment = leaveRequest.getEmployee().getDepartment();
+
+            if (requestDepartment == null
+                    || requestDepartment.isBlank()
+                    || !Objects.equals(supervisorDepartment, requestDepartment)) {
+                throw new AccessDeniedException(
+                        "Você só pode decidir solicitações do seu departamento."
+                );
+            }
+        }
+
+        if (user.getEmployee() != null
+                && Objects.equals(
+                user.getEmployee().getId(),
+                leaveRequest.getEmployee().getId()
+        )) {
+            throw new AccessDeniedException(
+                    "Você não pode aprovar sua própria solicitação."
+            );
+        }
+
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             throw new InvalidLeaveRequestException("Somente solicitações pendentes podem ser aprovadas.");
         }
@@ -326,6 +359,37 @@ public class LeaveRequestService {
 
         if (user.getRole() != Role.ADMIN && user.getRole() != Role.SUPERVISOR) {
             throw new AccessDeniedException("Você não tem permissão para rejeitar solicitações.");
+        }
+
+        if (user.getRole() == Role.SUPERVISOR) {
+            if (user.getEmployee() == null
+                    || user.getEmployee().getDepartment() == null
+                    || user.getEmployee().getDepartment().isBlank()) {
+                throw new AccessDeniedException(
+                        "Supervisor não está vinculado a um departamento."
+                );
+            }
+
+            String supervisorDepartment = user.getEmployee().getDepartment();
+            String requestDepartment = leaveRequest.getEmployee().getDepartment();
+
+            if (requestDepartment == null
+                    || requestDepartment.isBlank()
+                    || !Objects.equals(supervisorDepartment, requestDepartment)) {
+                throw new AccessDeniedException(
+                        "Você só pode decidir solicitações do seu departamento."
+                );
+            }
+        }
+
+        if (user.getEmployee() != null
+                && Objects.equals(
+                user.getEmployee().getId(),
+                leaveRequest.getEmployee().getId()
+        )) {
+            throw new AccessDeniedException(
+                    "Você não pode rejeitar sua própria solicitação."
+            );
         }
 
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {

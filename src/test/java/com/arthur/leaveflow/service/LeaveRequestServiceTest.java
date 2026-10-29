@@ -918,4 +918,58 @@ class LeaveRequestServiceTest {
         verify(leaveRequestRepository, never()).findAll(pageable);
     }
 
+    @Test
+    void naoDeveAprovarPropriaSolicitacao() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        autenticarSupervisor(supervisor);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                supervisor,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class, () ->
+                leaveRequestService.aprovarSolicitacao(1L)
+        );
+
+    }
+
+    @Test
+    void naoDeveRejeitarPropriaSolicitacao() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        autenticarSupervisor(supervisor);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                supervisor,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class, () ->
+                leaveRequestService.rejeitarSolicitacao(1L, "Motivo de teste")
+        );
+
+    }
+
 }
