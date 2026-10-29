@@ -45,6 +45,30 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             Pageable pageable
     );
 
+    Page<LeaveRequest> findByEmployeeDepartment(
+            String department,
+            Pageable pageable
+    );
+
+    Page<LeaveRequest> findByEmployeeDepartmentAndStatus(
+            String department,
+            LeaveStatus status,
+            Pageable pageable
+    );
+
+    Page<LeaveRequest> findByEmployeeDepartmentAndLeaveType(
+            String department,
+            LeaveType leaveType,
+            Pageable pageable
+    );
+
+    Page<LeaveRequest> findByEmployeeDepartmentAndStatusAndLeaveType(
+            String department,
+            LeaveStatus status,
+            LeaveType leaveType,
+            Pageable pageable
+    );
+
     // consulta se ja existe outra solicitação aprovada do mesmo funcionario
     // com o mesmo tipo e com datas que se sobrepoem ao periodo informado
 

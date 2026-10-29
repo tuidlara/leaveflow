@@ -158,6 +158,37 @@ public class LeaveRequestService {
             } else {
                 solicitacoes = leaveRequestRepository.findAll(pageable);
             }
+        } else if (user.getRole() == Role.SUPERVISOR) {
+            Employee employee = user.getEmployee();
+
+            if (employee == null
+                    || employee.getDepartment() == null
+                    || employee.getDepartment().isBlank()) {
+                throw new AccessDeniedException(
+                        "O supervisor não está vinculado a um departamento."
+                );
+            }
+
+            String department = employee.getDepartment();
+
+            if (leaveType != null && status != null) {
+                solicitacoes =
+                        leaveRequestRepository
+                                .findByEmployeeDepartmentAndStatusAndLeaveType(
+                                        department, status, leaveType, pageable);
+            } else if (status != null) {
+                solicitacoes =
+                        leaveRequestRepository.findByEmployeeDepartmentAndStatus(
+                                department, status, pageable);
+            } else if (leaveType != null) {
+                solicitacoes =
+                        leaveRequestRepository.findByEmployeeDepartmentAndLeaveType(
+                                department, leaveType, pageable);
+            } else {
+                solicitacoes =
+                        leaveRequestRepository.findByEmployeeDepartment(
+                                department, pageable);
+            }
         } else {
             Employee employee = user.getEmployee();
 

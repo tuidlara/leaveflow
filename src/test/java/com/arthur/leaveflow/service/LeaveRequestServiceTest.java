@@ -1,4 +1,3 @@
-
 package com.arthur.leaveflow.service;
 
 import com.arthur.leaveflow.dto.LeaveRequestRequest;
@@ -94,6 +93,28 @@ class LeaveRequestServiceTest {
                         EMAIL_ADMIN,
                         null,
                         List.of(() -> "ROLE_ADMIN")
+                )
+        );
+    }
+
+    private void autenticarSupervisor(Employee supervisor) {
+        String email = "supervisor@teste.com";
+
+        User usuario = new User(
+                email,
+                "senha",
+                Role.SUPERVISOR,
+                supervisor
+        );
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(usuario));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        email,
+                        null,
+                        List.of(() -> "ROLE_SUPERVISOR")
                 )
         );
     }
@@ -810,4 +831,91 @@ class LeaveRequestServiceTest {
                 pageable
         );
     }
+
+    @Test
+    void deveListarSolicitacoesDoDepartamentoDoSupervisor() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        autenticarSupervisor(supervisor);
+
+        when(leaveRequestRepository.findByEmployeeDepartment("TI", pageable))
+                .thenReturn(Page.empty());
+
+        Page<LeaveRequestResponse> resultado =
+                leaveRequestService.listarSolicitacoes(pageable, null, null);
+
+        assertNotNull(resultado);
+
+        verify(leaveRequestRepository)
+                .findByEmployeeDepartment("TI", pageable);
+
+        verify(leaveRequestRepository, never()).findAll(pageable);
+        verify(leaveRequestRepository, never()).findByEmployeeId(anyLong(), any(Pageable.class));
+    }
+
+    @Test
+    void deveFiltrarSolicitacoesDoDepartamentoDoSupervisorPorStatus() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        Pageable pageable = PageRequest.of(0, 10);
+        LeaveStatus status = LeaveStatus.PENDING;
+
+        autenticarSupervisor(supervisor);
+
+        when(leaveRequestRepository.findByEmployeeDepartmentAndStatus(
+                "TI", status, pageable
+        )).thenReturn(Page.empty());
+
+        Page<LeaveRequestResponse> resultado =
+                leaveRequestService.listarSolicitacoes(pageable, null, status);
+
+        assertNotNull(resultado);
+
+        verify(leaveRequestRepository)
+                .findByEmployeeDepartmentAndStatus("TI", status, pageable);
+
+        verify(leaveRequestRepository, never()).findAll(pageable);
+    }
+
+    @Test
+    void deveFiltrarSolicitacoesDoDepartamentoDoSupervisorPorTipoEStatus() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        Pageable pageable = PageRequest.of(0, 10);
+        LeaveType tipo = LeaveType.VACATION;
+        LeaveStatus status = LeaveStatus.PENDING;
+
+        autenticarSupervisor(supervisor);
+
+        when(leaveRequestRepository.findByEmployeeDepartmentAndStatusAndLeaveType(
+                "TI", status, tipo, pageable
+        )).thenReturn(Page.empty());
+
+        Page<LeaveRequestResponse> resultado =
+                leaveRequestService.listarSolicitacoes(pageable, tipo, status);
+
+        assertNotNull(resultado);
+
+        verify(leaveRequestRepository)
+                .findByEmployeeDepartmentAndStatusAndLeaveType(
+                        "TI", status, tipo, pageable
+                );
+
+        verify(leaveRequestRepository, never()).findAll(pageable);
+    }
+
 }
