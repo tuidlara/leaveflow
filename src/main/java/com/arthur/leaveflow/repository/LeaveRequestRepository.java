@@ -1,4 +1,3 @@
-
 package com.arthur.leaveflow.repository;
 
 import com.arthur.leaveflow.entity.LeaveRequest;
@@ -11,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long> {
 
@@ -67,6 +67,11 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             LeaveStatus status,
             LeaveType leaveType,
             Pageable pageable
+    );
+
+    Optional<LeaveRequest> findByIdAndEmployeeDepartment(
+            Long id,
+            String department
     );
 
     // consulta se ja existe outra solicitação aprovada do mesmo funcionario

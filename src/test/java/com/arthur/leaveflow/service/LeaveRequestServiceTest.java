@@ -628,6 +628,8 @@ class LeaveRequestServiceTest {
 
     @Test
     void deveLancarExcecaoQuandoSolicitacaoNaoExisteAoBuscar() {
+        autenticarAdmin();
+
         when(leaveRequestRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
@@ -690,6 +692,40 @@ class LeaveRequestServiceTest {
                 AccessDeniedException.class,
                 () -> leaveRequestService.buscarSolicitacaoPorId(2L)
         );
+    }
+
+    @Test
+    void deveBuscarSolicitacaoPorIdQuandoSupervisorDoMesmoDepartamento() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getDepartment()).thenReturn("TI");
+
+        autenticarSupervisor(supervisor);
+
+        Employee funcionario = new Employee();
+        funcionario.setDepartment("TI");
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findByIdAndEmployeeDepartment(1L, "TI"))
+                .thenReturn(Optional.of(solicitacao));
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.buscarSolicitacaoPorId(1L);
+
+        assertNotNull(resposta);
+        assertEquals(LeaveType.VACATION, resposta.leaveType());
+        assertEquals(LeaveStatus.PENDING, resposta.status());
+        assertEquals(LocalDate.of(2027, 1, 10), resposta.startDate());
+        assertEquals(LocalDate.of(2027, 1, 20), resposta.endDate());
+
+        verify(leaveRequestRepository)
+                .findByIdAndEmployeeDepartment(1L, "TI");
     }
 
     @Test

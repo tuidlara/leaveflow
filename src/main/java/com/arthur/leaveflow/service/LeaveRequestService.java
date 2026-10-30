@@ -96,38 +96,71 @@ public class LeaveRequestService {
     }
 
     public LeaveRequestResponse buscarSolicitacaoPorId(Long id) {
-        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
-                .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AccessDeniedException("Usuário não autenticado.");
         }
 
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Usuário autenticado não encontrado."
                 ));
 
+        LeaveRequest leaveRequest;
+
         if (user.getRole() == Role.ADMIN) {
-            return toResponse(leaveRequest);
-        }
+            leaveRequest = leaveRequestRepository.findById(id)
+                    .orElseThrow(() -> new LeaveRequestNotFoundException(
+                            "Solicitação não encontrada para o ID informado."
+                    ));
 
-        Employee employee = user.getEmployee();
+        } else if (user.getRole() == Role.SUPERVISOR) {
+            Employee employee = user.getEmployee();
 
-        if (employee == null
-                || !employee.getId().equals(leaveRequest.getEmployee().getId())) {
-            throw new AccessDeniedException(
-                    "Você não tem permissão para consultar esta solicitação."
-            );
+            if (employee == null
+                    || employee.getDepartment() == null
+                    || employee.getDepartment().isBlank()) {
+                throw new AccessDeniedException(
+                        "O supervisor não está vinculado a um departamento."
+                );
+            }
+
+            leaveRequest = leaveRequestRepository
+                    .findByIdAndEmployeeDepartment(
+                            id, employee.getDepartment()
+                    )
+                    .orElseThrow(() -> new LeaveRequestNotFoundException(
+                            "Solicitação não encontrada para o ID informado."
+                    ));
+
+        } else {
+            Employee employee = user.getEmployee();
+
+            if (employee == null) {
+                throw new AccessDeniedException(
+                        "O usuário não está vinculado a um funcionário."
+                );
+            }
+
+            leaveRequest = leaveRequestRepository.findById(id)
+                    .orElseThrow(() -> new LeaveRequestNotFoundException(
+                            "Solicitação não encontrada para o ID informado."
+                    ));
+
+            if (!Objects.equals(
+                    employee.getId(),
+                    leaveRequest.getEmployee().getId()
+            )) {
+                throw new AccessDeniedException(
+                        "Você não tem permissão para consultar esta solicitação."
+                );
+            }
         }
 
         return toResponse(leaveRequest);
-
     }
 
     public Page<LeaveRequestResponse> listarSolicitacoes(
