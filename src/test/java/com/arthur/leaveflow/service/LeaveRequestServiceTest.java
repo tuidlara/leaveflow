@@ -380,6 +380,118 @@ class LeaveRequestServiceTest {
     }
 
     @Test
+    void devePermitirFuncionarioCancelarPropriaSolicitacao() {
+        Employee funcionario = mock(Employee.class);
+        when(funcionario.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionario);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.ABSENCE,
+                LocalDate.of(2027, 5, 10),
+                LocalDate.of(2027, 5, 12),
+                "Consulta médica"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+        when(leaveRequestRepository.save(solicitacao))
+                .thenReturn(solicitacao);
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.cancelarSolicitacao(1L);
+
+        assertEquals(LeaveStatus.CANCELLED, resposta.status());
+
+        verify(leaveRequestRepository).save(solicitacao);
+    }
+
+    @Test
+    void naoDevePermitirFuncionarioCancelarSolicitacaoDeOutro() {
+        Employee funcionarioAutenticado = mock(Employee.class);
+        when(funcionarioAutenticado.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionarioAutenticado);
+
+        Employee outroFuncionario = mock(Employee.class);
+        when(outroFuncionario.getId()).thenReturn(2L);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                outroFuncionario,
+                LeaveType.ABSENCE,
+                LocalDate.of(2027, 5, 10),
+                LocalDate.of(2027, 5, 12),
+                "Consulta médica"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class,
+                () -> leaveRequestService.cancelarSolicitacao(1L));
+
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void devePermitirSupervisorCancelarPropriaSolicitacao() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getId()).thenReturn(1L);
+
+        autenticarSupervisor(supervisor);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                supervisor,
+                LeaveType.ABSENCE,
+                LocalDate.of(2027, 5, 10),
+                LocalDate.of(2027, 5, 12),
+                "Consulta médica"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+        when(leaveRequestRepository.save(solicitacao))
+                .thenReturn(solicitacao);
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.cancelarSolicitacao(1L);
+
+        assertEquals(LeaveStatus.CANCELLED, resposta.status());
+
+        verify(leaveRequestRepository).save(solicitacao);
+    }
+
+    @Test
+    void naoDevePermitirSupervisorCancelarSolicitacaoDeOutro() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getId()).thenReturn(1L);
+
+        autenticarSupervisor(supervisor);
+
+        Employee funcionario = mock(Employee.class);
+        when(funcionario.getId()).thenReturn(2L);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.ABSENCE,
+                LocalDate.of(2027, 5, 10),
+                LocalDate.of(2027, 5, 12),
+                "Consulta médica"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> leaveRequestService.cancelarSolicitacao(1L)
+        );
+
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
     void naoDeveCancelarSolicitacaoJaDecidida() {
         autenticarAdmin();
 
