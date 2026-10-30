@@ -1140,4 +1140,168 @@ class LeaveRequestServiceTest {
         verify(leaveRequestRepository).save(solicitacao);
     }
 
+    @Test
+    void deveRejeitarSolicitacaoDeOutroFuncionarioDoMesmoDepartamento() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getId()).thenReturn(1L);
+        when(supervisor.getDepartment()).thenReturn("TI");
+
+        Employee funcionario = mock(Employee.class);
+        when(funcionario.getId()).thenReturn(2L);
+        when(funcionario.getDepartment()).thenReturn("TI");
+
+        autenticarSupervisor(supervisor);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        when(leaveRequestRepository.save(solicitacao))
+                .thenReturn(solicitacao);
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.rejeitarSolicitacao(
+                        1L, "Período indisponível"
+                );
+
+        assertEquals(LeaveStatus.REJECTED, resposta.status());
+        assertEquals("supervisor@teste.com", resposta.decidedBy());
+        assertEquals("Período indisponível", resposta.decisionReason());
+
+        verify(leaveRequestRepository).save(solicitacao);
+    }
+
+    @Test
+    void naoDeveRejeitarSolicitacaoDeOutroDepartamento() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getDepartment()).thenReturn("TI");
+
+        Employee funcionario = mock(Employee.class);
+        when(funcionario.getDepartment()).thenReturn("RH");
+
+        autenticarSupervisor(supervisor);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class, () ->
+                leaveRequestService.rejeitarSolicitacao(
+                        1L, "Período indisponível"
+                )
+        );
+
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void naoDeveRejeitarSolicitacaoQuandoSupervisorNaoPossuiFuncionarioVinculado() {
+        String email = "supervisor@teste.com";
+        User usuario = new User(email, "senha", Role.SUPERVISOR);
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(usuario));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        email, null, List.of(() -> "ROLE_SUPERVISOR")
+                )
+        );
+
+        Employee funcionario = mock(Employee.class);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class, () ->
+                leaveRequestService.rejeitarSolicitacao(
+                        1L, "Período indisponível"
+                )
+        );
+
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void naoDeveRejeitarSolicitacaoQuandoSupervisorNaoPossuiDepartamento() {
+        Employee supervisor = mock(Employee.class);
+        when(supervisor.getDepartment()).thenReturn(null);
+
+        autenticarSupervisor(supervisor);
+
+        Employee funcionario = mock(Employee.class);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        assertThrows(AccessDeniedException.class, () ->
+                leaveRequestService.rejeitarSolicitacao(
+                        1L, "Período indisponível"
+                )
+        );
+
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void devePermitirAdminRejeitarSolicitacaoDeOutroDepartamento() {
+        autenticarAdmin();
+
+        Employee funcionario = mock(Employee.class);
+
+        LeaveRequest solicitacao = criarSolicitacao(
+                funcionario,
+                LeaveType.VACATION,
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                "Férias anuais"
+        );
+
+        when(leaveRequestRepository.findById(1L))
+                .thenReturn(Optional.of(solicitacao));
+
+        when(leaveRequestRepository.save(solicitacao))
+                .thenReturn(solicitacao);
+
+        LeaveRequestResponse resposta =
+                leaveRequestService.rejeitarSolicitacao(
+                        1L, "Período indisponível"
+                );
+
+        assertEquals(LeaveStatus.REJECTED, resposta.status());
+        assertEquals(EMAIL_ADMIN, resposta.decidedBy());
+        assertEquals("Período indisponível", resposta.decisionReason());
+
+        verify(leaveRequestRepository).save(solicitacao);
+    }
 }
