@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 public class User {
 
     @OneToOne
-    @JoinColumn(name = "employee_id", unique = true, nullable = true)
+    @JoinColumn(name = "employee_id", unique = true)
     private Employee employee;
 
     @Id

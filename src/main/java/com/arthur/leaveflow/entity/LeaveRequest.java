@@ -28,17 +28,19 @@ public class LeaveRequest {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String reason;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LeaveStatus status;
 
+    @Column(length = 500)
     private String decisionReason;
 
     private String decidedBy;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime decidedAt;
