@@ -1,7 +1,9 @@
 package com.arthur.leaveflow.security;
 
+import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.entity.User;
 import com.arthur.leaveflow.enums.Role;
+import com.arthur.leaveflow.repository.EmployeeRepository;
 import com.arthur.leaveflow.repository.UserRepository;
 import com.arthur.leaveflow.service.JwtService;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.junit.jupiter.api.BeforeEach;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,6 +35,9 @@ class SecurityConfigTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -81,7 +87,7 @@ class SecurityConfigTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                    "email": "admin@leaveflow.com",
+                                    "email": "teste@leaveflow.com",
                                     "senha": "senha-incorreta"
                                 }
                                 """))
@@ -125,14 +131,26 @@ class SecurityConfigTest {
         User user = criarUsuarioDeTeste(Role.EMPLOYEE);
         String token = jwtService.gerarToken(user);
 
-        mockMvc.perform(post("/leave-requests/1/approve")
+        mockMvc.perform(patch("/leave-requests/1/approve")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void devePermitirAcessoDeSupervisorNaRotaDeAprovacao() throws Exception {
-        User user = criarUsuarioDeTeste(Role.SUPERVISOR);
+        Employee employee = employeeRepository.save(
+                new Employee("Supervisor Teste", "supervisor@leaveflow.com", "TI")
+        );
+
+        User user = userRepository.save(
+                new User(
+                        "supervisor@leaveflow.com",
+                        passwordEncoder.encode("senha-correta"),
+                        Role.SUPERVISOR,
+                        employee
+                )
+        );
+
         String token = jwtService.gerarToken(user);
 
         mockMvc.perform(patch("/leave-requests/1/approve")
