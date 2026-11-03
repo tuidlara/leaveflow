@@ -224,7 +224,7 @@ public class LeaveRequestService {
                         leaveRequestRepository.findByEmployeeDepartment(
                                 department, pageable);
             }
-        } else {
+        } else if (user.getRole() == Role.EMPLOYEE) {
             Employee employee = user.getEmployee();
 
             if (employee == null) {
@@ -248,6 +248,10 @@ public class LeaveRequestService {
                 solicitacoes = leaveRequestRepository.findByEmployeeId(
                         employeeId, pageable);
             }
+        } else {
+            throw new AccessDeniedException(
+                    "Perfil de usuário sem permissão para listar solicitações."
+            );
         }
 
         return solicitacoes.map(this::toResponse);

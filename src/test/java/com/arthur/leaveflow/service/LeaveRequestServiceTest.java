@@ -1067,6 +1067,120 @@ class LeaveRequestServiceTest {
     }
 
     @Test
+    void deveFiltrarSolicitacoesDoFuncionarioPorTipo() {
+        Employee funcionarioLogado = mock(Employee.class);
+        when(funcionarioLogado.getId()).thenReturn(1L);
+
+        autenticarFuncionario(funcionarioLogado);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<LeaveRequest> paginaVazia =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(leaveRequestRepository.findByEmployeeIdAndLeaveType(
+                1L, LeaveType.VACATION, pageable
+        )).thenReturn(paginaVazia);
+
+        Page<LeaveRequestResponse> resposta =
+                leaveRequestService.listarSolicitacoes(
+                        pageable, LeaveType.VACATION, null
+                );
+
+        assertEquals(0, resposta.getTotalElements());
+
+        verify(leaveRequestRepository).findByEmployeeIdAndLeaveType(
+                1L, LeaveType.VACATION, pageable
+        );
+
+        verify(leaveRequestRepository, never())
+                .findByLeaveType(any(LeaveType.class), any(Pageable.class));
+    }
+
+    @Test
+    void deveFiltrarSolicitacoesDoDepartamentoDoSupervisorPorTipo() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                "TI"
+        );
+
+        autenticarSupervisor(supervisor);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<LeaveRequest> paginaVazia =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(leaveRequestRepository.findByEmployeeDepartmentAndLeaveType(
+                "TI", LeaveType.VACATION, pageable
+        )).thenReturn(paginaVazia);
+
+        Page<LeaveRequestResponse> resposta =
+                leaveRequestService.listarSolicitacoes(
+                        pageable, LeaveType.VACATION, null
+                );
+
+        assertEquals(0, resposta.getTotalElements());
+
+        verify(leaveRequestRepository)
+                .findByEmployeeDepartmentAndLeaveType(
+                        "TI", LeaveType.VACATION, pageable
+                );
+
+        verify(leaveRequestRepository, never())
+                .findAll(any(Pageable.class));
+    }
+
+    @Test
+    void naoDeveListarSolicitacoesQuandoFuncionarioNaoPossuiVinculo() {
+        autenticarFuncionario(null);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        assertThrows(AccessDeniedException.class,
+                () -> leaveRequestService.listarSolicitacoes(
+                        pageable, null, null
+                ));
+
+        verifyNoInteractions(leaveRequestRepository);
+    }
+
+    @Test
+    void naoDeveListarSolicitacoesQuandoSupervisorNaoPossuiVinculo() {
+        autenticarSupervisor(null);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        assertThrows(AccessDeniedException.class,
+                () -> leaveRequestService.listarSolicitacoes(
+                        pageable, null, null
+                ));
+
+        verifyNoInteractions(leaveRequestRepository);
+    }
+
+    @Test
+    void naoDeveListarSolicitacoesQuandoSupervisorNaoPossuiDepartamento() {
+        Employee supervisor = new Employee(
+                "Supervisor Teste",
+                "supervisor@teste.com",
+                null
+        );
+
+        autenticarSupervisor(supervisor);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        assertThrows(AccessDeniedException.class,
+                () -> leaveRequestService.listarSolicitacoes(
+                        pageable, null, null
+                ));
+
+        verifyNoInteractions(leaveRequestRepository);
+    }
+
+    @Test
     void naoDeveAprovarPropriaSolicitacao() {
         Employee supervisor = new Employee(
                 "Supervisor Teste",
