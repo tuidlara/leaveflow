@@ -108,7 +108,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void deveLancarExcecaoQuandoUsuarioNaoForEncontrado() throws Exception {
+    void deveRetornar401QuandoUsuarioNaoForEncontrado() throws Exception {
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer token-valido");
 
@@ -118,11 +118,9 @@ class JwtAuthenticationFilterTest {
         when(userDetailsService.loadUserByUsername("inexistente@leaveflow.com"))
                 .thenThrow(new UsernameNotFoundException("Usuário não encontrado."));
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UsernameNotFoundException.class,
-                () -> filter.doFilterInternal(request, response, filterChain)
-        );
+        filter.doFilterInternal(request, response, filterChain);
 
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verifyNoInteractions(filterChain);
     }
 }

@@ -43,6 +43,12 @@ public class UserService {
                 );
             }
 
+            if (userRepository.existsByEmployee_Id(employeeId)) {
+                throw new IllegalArgumentException(
+                        "Esse funcionário já possui uma conta vinculada."
+                );
+            }
+
             employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Funcionário não encontrado."

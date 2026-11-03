@@ -4,6 +4,7 @@ import com.arthur.leaveflow.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public record EmployeeRegistrationRequest(
 
@@ -17,6 +18,7 @@ public record EmployeeRegistrationRequest(
         @NotBlank(message = "Departamento não pode ser vazio.")
         String department,
 
+        @Size(min = 8, max = 72, message = "A senha deve ter entre 8 e 72 caracteres.")
         @NotBlank(message = "A senha é obrigatória.")
         String senha,
 
