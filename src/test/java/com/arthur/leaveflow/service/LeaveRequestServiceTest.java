@@ -16,6 +16,7 @@ import com.arthur.leaveflow.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -1565,5 +1566,31 @@ class LeaveRequestServiceTest {
         assertEquals("Período indisponível", resposta.decisionReason());
 
         verify(leaveRequestRepository).save(solicitacao);
+    }
+
+    @Test
+    void deveAssociarSolicitacaoAoFuncionarioDoUsuarioAutenticado() {
+        Employee funcionario = mock(Employee.class);
+
+        autenticarFuncionario(funcionario);
+
+        LeaveRequestRequest request = new LeaveRequestRequest(
+                LeaveType.VACATION,
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 15),
+                "Viagem em família"
+        );
+
+        when(leaveRequestRepository.save(any(LeaveRequest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        leaveRequestService.criarSolicitacao(request);
+
+        ArgumentCaptor<LeaveRequest> captor =
+                ArgumentCaptor.forClass(LeaveRequest.class);
+
+        verify(leaveRequestRepository).save(captor.capture());
+
+        assertSame(funcionario, captor.getValue().getEmployee());
     }
 }
