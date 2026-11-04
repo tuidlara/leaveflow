@@ -6,11 +6,14 @@ import com.arthur.leaveflow.enums.LeaveStatus;
 import com.arthur.leaveflow.enums.LeaveType;
 import com.arthur.leaveflow.service.LeaveRequestService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("/leave-requests")
 public class LeaveRequestController {
@@ -54,7 +57,9 @@ public class LeaveRequestController {
     @PatchMapping("/{id}/reject")
     public LeaveRequestResponse rejectRequest(
             @PathVariable Long id,
-            @RequestParam(required = false) String decisionReason) {
+            @RequestParam(required = false)
+            @Size(max = 500, message = "O motivo da rejeição deve ter no máximo 500 caracteres.")
+            String decisionReason) {
         return leaveRequestService.rejeitarSolicitacao(id, decisionReason);
     }
 
