@@ -206,6 +206,10 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
+
+        when(employeeRepository.findByIdWithLock(funcionario.getId()))
+                .thenReturn(Optional.of(funcionario));
+
         when(leaveRequestRepository.existsOverlappingRequest(
                 funcionario.getId(),
                 LeaveType.VACATION,
@@ -236,6 +240,10 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
+
+        when(employeeRepository.findByIdWithLock(funcionario.getId()))
+                .thenReturn(Optional.of(funcionario));
+
         when(leaveRequestRepository.existsOverlappingRequest(
                 funcionario.getId(),
                 LeaveType.VACATION,
@@ -1258,6 +1266,9 @@ class LeaveRequestServiceTest {
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
 
+        when(employeeRepository.findByIdWithLock(funcionario.getId()))
+                .thenReturn(Optional.of(funcionario));
+
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);
 
@@ -1390,6 +1401,9 @@ class LeaveRequestServiceTest {
 
         when(leaveRequestRepository.findById(1L))
                 .thenReturn(Optional.of(solicitacao));
+
+        when(employeeRepository.findByIdWithLock(funcionario.getId()))
+                .thenReturn(Optional.of(funcionario));
 
         when(leaveRequestRepository.save(solicitacao))
                 .thenReturn(solicitacao);

@@ -9,8 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,6 +30,9 @@ class LeaveRequestRepositoryTest {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private EntityManager entityManager;
@@ -229,5 +240,79 @@ class LeaveRequestRepositoryTest {
                 OptimisticLockingFailureException.class,
                 () -> leaveRequestRepository.saveAndFlush(supervisorB)
         );
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void deveAguardarLiberacaoDoBloqueioDoFuncionario() throws Exception {
+
+        TransactionTemplate transactionTemplate =
+                new TransactionTemplate(transactionManager);
+
+        Long funcionarioId = transactionTemplate.execute(status ->
+                employeeRepository.save(new Employee(
+                        "Funcionário Concorrência",
+                        "funcionario.lock@example.com",
+                        "TI"
+                )).getId()
+        );
+
+        CountDownLatch bloqueioAdquirido = new CountDownLatch(1);
+        CountDownLatch liberarBloqueio = new CountDownLatch(1);
+        CountDownLatch segundaTransacaoIniciada = new CountDownLatch(1);
+        CountDownLatch segundoBloqueioAdquirido = new CountDownLatch(1);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        try {
+            // transação A adquire o bloqueio e o mantém
+            var transacaoA = executor.submit(() ->
+                    transactionTemplate.executeWithoutResult(status -> {
+                        employeeRepository.findByIdWithLock(funcionarioId)
+                                .orElseThrow();
+
+                        bloqueioAdquirido.countDown();
+
+                        try {
+                            liberarBloqueio.await();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        }
+                    })
+            );
+
+            assertTrue(bloqueioAdquirido.await(5, TimeUnit.SECONDS));
+
+            // transação B tenta adquirir o mesmo bloqueio
+            var transacaoB = executor.submit(() ->
+                    transactionTemplate.executeWithoutResult(status -> {
+                        segundaTransacaoIniciada.countDown();
+
+                        employeeRepository.findByIdWithLock(funcionarioId)
+                                .orElseThrow();
+
+                        segundoBloqueioAdquirido.countDown();
+                    })
+            );
+
+            assertTrue(segundaTransacaoIniciada.await(5, TimeUnit.SECONDS));
+
+            // B ainda não conseguiu adquirir o bloqueio
+            assertFalse(segundoBloqueioAdquirido.await(1, TimeUnit.SECONDS));
+
+            // A libera o bloqueio ao finalizar a transação
+            liberarBloqueio.countDown();
+
+            transacaoA.get(5, TimeUnit.SECONDS);
+            transacaoB.get(5, TimeUnit.SECONDS);
+
+            // B finalmente conseguiu adquirir o bloqueio
+            assertTrue(segundoBloqueioAdquirido.await(5, TimeUnit.SECONDS));
+
+        } finally {
+            liberarBloqueio.countDown();
+            executor.shutdownNow();
+        }
     }
 }

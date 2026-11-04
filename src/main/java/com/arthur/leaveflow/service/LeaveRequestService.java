@@ -8,6 +8,7 @@ import com.arthur.leaveflow.entity.User;
 import com.arthur.leaveflow.enums.LeaveStatus;
 import com.arthur.leaveflow.enums.LeaveType;
 import com.arthur.leaveflow.enums.Role;
+import com.arthur.leaveflow.exception.EmployeeNotFoundException;
 import com.arthur.leaveflow.exception.InvalidLeaveRequestException;
 import com.arthur.leaveflow.exception.LeaveRequestNotFoundException;
 import com.arthur.leaveflow.repository.EmployeeRepository;
@@ -21,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import com.arthur.leaveflow.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
@@ -298,7 +300,7 @@ public class LeaveRequestService {
         return toResponse(solicitacaoSalva);
     }
 
-
+    @Transactional
     public LeaveRequestResponse aprovarSolicitacao(Long id) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
                 .orElseThrow(() -> new LeaveRequestNotFoundException("Solicitação não encontrada para o ID informado."));
@@ -355,6 +357,12 @@ public class LeaveRequestService {
         }
 
         if (leaveRequest.getLeaveType() == LeaveType.VACATION) {
+
+            employeeRepository.findByIdWithLock(leaveRequest.getEmployee().getId())
+                    .orElseThrow(() -> new EmployeeNotFoundException(
+                            "Funcionário não encontrado."
+                    ));
+
             boolean hasOverlap = leaveRequestRepository.existsOverlappingRequest(
                     leaveRequest.getEmployee().getId(),
                     LeaveType.VACATION,
