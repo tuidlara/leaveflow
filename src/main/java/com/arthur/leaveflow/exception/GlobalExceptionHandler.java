@@ -1,5 +1,6 @@
 package com.arthur.leaveflow.exception;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -60,5 +61,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String tratarInvalidRole(InvalidRoleException e) {
         return e.getMessage();
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String tratarConflitoConcorrencia(OptimisticLockingFailureException e) {
+        return "Esta solicitação foi alterada por outro usuário. Atualize os dados e tente novamente.";
     }
 }

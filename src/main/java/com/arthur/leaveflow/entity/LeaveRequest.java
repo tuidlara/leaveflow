@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 @Entity
 public class LeaveRequest {
 
+    @Version
+    private Long version;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

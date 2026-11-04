@@ -1,17 +1,18 @@
-
 package com.arthur.leaveflow.repository;
 
 import com.arthur.leaveflow.entity.Employee;
 import com.arthur.leaveflow.entity.LeaveRequest;
 import com.arthur.leaveflow.enums.LeaveStatus;
 import com.arthur.leaveflow.enums.LeaveType;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.dao.OptimisticLockingFailureException;
+
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 class LeaveRequestRepositoryTest {
@@ -21,6 +22,9 @@ class LeaveRequestRepositoryTest {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void deveEncontrarFeriasAprovadasComDatasSobrepostas() {
@@ -184,4 +188,46 @@ class LeaveRequestRepositoryTest {
         assertFalse(sobreposicao);
     }
 
+    @Test
+    void deveImpedirAtualizacaoComVersaoDesatualizada() {
+        Employee funcionario = employeeRepository.save(new Employee(
+                "Funcionário Teste",
+                "concorrencia@example.com",
+                "TI"
+        ));
+
+        LeaveRequest solicitacao = new LeaveRequest(
+                funcionario,
+                LeaveType.ABSENCE,
+                LocalDate.of(2027, 5, 10),
+                LocalDate.of(2027, 5, 10),
+                "Consulta médica"
+        );
+
+        solicitacao = leaveRequestRepository.saveAndFlush(solicitacao);
+
+        Long id = solicitacao.getId();
+
+        // supervisor A carrega a solicitação
+        LeaveRequest supervisorA = leaveRequestRepository.findById(id).orElseThrow();
+        entityManager.detach(supervisorA);
+
+        // supervisor B carrega a mesma solicitação
+        LeaveRequest supervisorB = leaveRequestRepository.findById(id).orElseThrow();
+        entityManager.detach(supervisorB);
+
+        // ambos possuem a mesma versão e status PENDING
+
+        supervisorA.aprovar("Supervisor A");
+        supervisorB.rejeitar("Supervisor B", "Motivo de teste");
+
+        // a primeira atualização é persistida
+        leaveRequestRepository.saveAndFlush(supervisorA);
+
+        // a segunda deve falhar por estar usando uma versão antiga
+        assertThrows(
+                OptimisticLockingFailureException.class,
+                () -> leaveRequestRepository.saveAndFlush(supervisorB)
+        );
+    }
 }
