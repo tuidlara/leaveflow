@@ -1,6 +1,8 @@
 package com.arthur.leaveflow.config;
 
 import com.arthur.leaveflow.security.JwtAuthenticationFilter;
+import com.arthur.leaveflow.security.LoginRateLimitFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -19,8 +21,23 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    private final LoginRateLimitFilter loginRateLimitFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginRateLimitFilter loginRateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.loginRateLimitFilter = loginRateLimitFilter;
+    }
+
+    @Bean
+    public FilterRegistrationBean<LoginRateLimitFilter> loginRateLimitFilterRegistration(
+            LoginRateLimitFilter filter
+    ) {
+        FilterRegistrationBean<LoginRateLimitFilter> registration =
+                new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+
+        return registration;
     }
 
     @Bean
@@ -56,7 +73,14 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterAfter(
+                        loginRateLimitFilter,
+                        JwtAuthenticationFilter.class
+                );
 
         return http.build();
     }

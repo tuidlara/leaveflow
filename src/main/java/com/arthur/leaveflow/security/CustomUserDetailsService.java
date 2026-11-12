@@ -24,10 +24,11 @@ public class CustomUserDetailsService implements UserDetailsService {
                         "Usuário não encontrado."
                 ));
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getSenha())
-                .authorities("ROLE_" + user.getRole().name())
-                .build();
+        return new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getSenha(),
+                user.getRole().name()
+        );
     }
 }
