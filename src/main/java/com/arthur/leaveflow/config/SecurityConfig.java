@@ -2,6 +2,7 @@ package com.arthur.leaveflow.config;
 
 import com.arthur.leaveflow.security.JwtAuthenticationFilter;
 import com.arthur.leaveflow.security.LoginRateLimitFilter;
+import com.arthur.leaveflow.security.UserRateLimitFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,9 +24,12 @@ public class SecurityConfig {
 
     private final LoginRateLimitFilter loginRateLimitFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginRateLimitFilter loginRateLimitFilter) {
+    private final UserRateLimitFilter userRateLimitFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginRateLimitFilter loginRateLimitFilter, UserRateLimitFilter userRateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.loginRateLimitFilter = loginRateLimitFilter;
+        this.userRateLimitFilter = userRateLimitFilter;
     }
 
     @Bean
@@ -33,6 +37,18 @@ public class SecurityConfig {
             LoginRateLimitFilter filter
     ) {
         FilterRegistrationBean<LoginRateLimitFilter> registration =
+                new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<UserRateLimitFilter> userRateLimitFilterRegistration(
+            UserRateLimitFilter filter
+    ) {
+        FilterRegistrationBean<UserRateLimitFilter> registration =
                 new FilterRegistrationBean<>(filter);
 
         registration.setEnabled(false);
@@ -80,6 +96,11 @@ public class SecurityConfig {
                 .addFilterAfter(
                         loginRateLimitFilter,
                         JwtAuthenticationFilter.class
+                )
+
+                .addFilterAfter(
+                        userRateLimitFilter,
+                        LoginRateLimitFilter.class
                 );
 
         return http.build();
