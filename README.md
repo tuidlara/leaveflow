@@ -15,6 +15,7 @@ The project provides a structured way to manage employees, submit leave requests
 - Department-based supervisor access
 - Prevention of overlapping approved vacation requests
 - Concurrency control for leave request approvals
+- Rate limiting for login attempts and authenticated API requests
 - Global exception handling
 - Automated tests with JUnit 5
 - Docker and Docker Compose
@@ -32,6 +33,16 @@ Supervisors and employees cannot approve or reject their own requests.
 
 The system also prevents overlapping vacation periods when approving requests. Concurrency control ensures that simultaneous approval attempts do not bypass this validation.
 
+## Security
+
+The API uses JWT authentication and role-based authorization through Spring Security.
+
+Rate limiting is implemented using Bucket4j:
+
+- **Login:** up to 5 attempts per IP address per minute.
+- **Authenticated requests:** up to 100 requests per user per minute.
+- Requests exceeding these limits receive an HTTP `429 Too Many Requests` response.
+
 ## Technologies
 
 - Java 17
@@ -41,7 +52,9 @@ The system also prevents overlapping vacation periods when approving requests. C
 - Spring Data JPA / Hibernate
 - PostgreSQL
 - H2
+- Bucket4j
 - JUnit 5
+- Mockito
 - Maven
 - Docker
 - Docker Compose
@@ -90,6 +103,12 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=your-admin-password
 ```
 
+Build the application:
+
+```bash
+./mvnw clean package -DskipTests
+```
+
 Start the application and PostgreSQL with Docker Compose:
 
 ```bash
@@ -127,6 +146,8 @@ Run the automated test suite with:
 ```bash
 ./mvnw test
 ```
+
+The project includes unit tests for the rate-limiting filters, covering allowed requests, exceeded limits and requests that should bypass the filters.
 
 ## Continuous Integration
 
